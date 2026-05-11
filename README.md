@@ -50,7 +50,7 @@ See Pipeline B Step 1 of the Project Sanjeevani handout.
 ## Installation
 
 ```bash
-git clone https://github.com/YOUR-TEAM/sanjeevani-dock.git
+git clone https://github.com/iGEM2022/SanjeevaniDock.git
 cd sanjeevani-dock
 pip3 install -e .
 ```
