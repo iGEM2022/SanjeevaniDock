@@ -1,0 +1,7 @@
+protein,metal,best_dG,vina_dG,cluster_size,consensus,interpretation,status
+smtA,CD,,,,FAILED,FAILED,"AutoDock Vina failed (return code 1).
+STDERR: 
+
+PDBQT parsing error: Atom type cd is not a valid AutoDock type (atom types are case-sensitive).
+ > HETATM    1  cd  cd  A   1       1.000   1.000   1.000  1.00  0.00    +2.000 cd
+"

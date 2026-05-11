@@ -1,0 +1,13 @@
+# SanjeevaniDock uses only the Python 3 standard library.
+# No pip packages need to be installed.
+#
+# External software required (install separately):
+#
+#   1. MGLTools 1.5.7 (win32)
+#      https://ccsb.scripps.edu/mgltools/downloads/
+#
+#   2. AutoDock 4.2.6 + AutoGrid 4
+#      https://autodock.scripps.edu/download-autodock4/
+#
+# Both must be installed and on your system PATH.
+# See Pipeline B Step 1 of the Project Sanjeevani handout.
