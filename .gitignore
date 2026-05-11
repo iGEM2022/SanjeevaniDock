@@ -1,0 +1,30 @@
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# AutoDock output files
+AutoDock_Runs/
+*.map
+*.fld
+*.xyz
+*.glg
+*.dlg
+
+# Vina leftovers
+*_vina.pdbqt
+*_vina.txt
+
+# Loose map files in root
+smtA_cd.*
+
+# Test files
+test.csv
+
+# VS Code
+.vscode/
+
+# Python egg
+*.egg-info/
+dist/
+build/
