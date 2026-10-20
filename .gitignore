@@ -3,28 +3,39 @@ __pycache__/
 *.pyc
 *.pyo
 
-# AutoDock output files
+# Python packaging
+*.egg-info/
+dist/
+build/
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# AutoDock output files (generated per run)
 AutoDock_Runs/
+Runs_*/
 *.map
 *.fld
 *.xyz
 *.glg
 *.dlg
 
-# Vina leftovers
-*_vina.pdbqt
-*_vina.txt
+# Generated inputs. These are written fresh for every run, so they should not
+# be committed (this also covers runs that use a custom --out-dir).
+# Receptor structures are .pdb files in proteins/ and ARE tracked.
+*.pdbqt
+*.gpf
+*.dpf
+AD4_metals.dat
 
-# Loose map files in root
-smtA_cd.*
-
-# Test files
+# Scratch result files. To publish results, put them in a results/ folder.
 test.csv
+/results*.csv
 
-# VS Code
+# Editors / OS
 .vscode/
-
-# Python egg
-*.egg-info/
-dist/
-build/
+.idea/
+.DS_Store
+Thumbs.db
