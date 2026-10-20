@@ -1,13 +1,19 @@
-# SanjeevaniDock uses only the Python 3 standard library.
+# SanjeevaniDock uses only the Python 3 standard library (Python 3.8 or newer).
 # No pip packages need to be installed.
 #
 # External software required (install separately):
 #
 #   1. MGLTools 1.5.7 (win32)
 #      https://ccsb.scripps.edu/mgltools/downloads/
+#      Used only for prepare_receptor4.py (protein -> PDBQT).
+#      It does NOT need to be on PATH. The default location is
+#      C:\Program Files (x86)\MGLTools-1.5.7 ; if you installed it elsewhere,
+#      set the MGLTOOLS_DIR environment variable to the install folder.
 #
 #   2. AutoDock 4.2.6 + AutoGrid 4
 #      https://autodock.scripps.edu/download-autodock4/
+#      The commands `autodock4` and `autogrid4` must be on your system PATH.
 #
-# Both must be installed and on your system PATH.
-# See Pipeline B Step 1 of the Project Sanjeevani handout.
+# The pipeline is currently set up for Windows, matching the MGLTools win32
+# layout above. See the README ("Quick start") for installation and a first
+# test run.
