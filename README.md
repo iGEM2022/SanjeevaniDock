@@ -126,7 +126,7 @@ Before using the software, note the following:
 
 AutoDock 4 has no built-in parameters for most heavy metals, so SanjeevaniDock writes its own `AD4_metals.dat`. AutoDock loads its default library first, so this file works as an addition to it.
 
-**These parameters are empirical.** They were set by the IISER TVM Dry Lab. They are **not** taken from a published force field and were **not** fitted to, or validated against, experimental binding data. The `ZN` values match AutoDock's own default zinc parameters. For Cd, Cu, Hg and Pb the `Rii` value falls at roughly 0.8-0.9 × the Shannon (1976) six-coordinate ionic diameter, but this is an observation about the numbers, not a derivation.
+**These parameters are empirical.** They were set by the IISER TVM Dry Lab. They are **not** taken from a published force field and were **not** fitted to, or validated against, experimental binding data. The `ZN` `Rii` (1.48) equals AutoDock's built-in zinc value, but `epsii` and `vol` do not (AutoDock: 0.550 and 1.700). All `vol` values here (10-16) are much larger than AutoDock's own metal volumes (about 1.7-2.8), and their effect on scores has not been tested. For Cd, Cu, Hg and Pb the `Rii` value falls at roughly 0.8-0.9 × the Shannon (1976) six-coordinate ionic diameter, but this is an observation about the numbers, not a derivation.
 
 | Code | Rii (Å) | epsii (kcal/mol) | vol (Å³) | solv | Charge |
 |------|---------|------------------|----------|------|--------|
