@@ -1,6 +1,7 @@
 import argparse
 import os
 import csv
+import sys
 from sanjeevani_dock.pipeline import run_pipeline
 
 
@@ -33,20 +34,25 @@ def parse_args():
     metal_group = parser.add_mutually_exclusive_group(required=True)
     metal_group.add_argument(
         "--metal",
-        type=str,
+        type=str.upper,
         choices=SUPPORTED_METALS,
-        help=f"Single metal to dock. Choices: {SUPPORTED_METALS}"
+        help=f"Single metal to dock (case-insensitive). Choices: {SUPPORTED_METALS}"
     )
     metal_group.add_argument(
         "--all-metals",
         action="store_true",
-        help="Dock all supported metals: CD, CU, HG, FE, ZN, PB"
+        help=f"Dock all supported metals: {', '.join(SUPPORTED_METALS)}"
     )
 
     parser.add_argument(
         "--focused",
         action="store_true",
-        help="Use focused grid (20x20x20) centered on CYS SG centroid.\nDefault is blind (60x60x60)."
+        help=(
+            "Use focused grid (20x20x20) centered on the centroid of ALL CYS SG atoms.\n"
+            "Default is blind (60x60x60).\n"
+            "Note: for multi-domain proteins this centroid lies between the domains,\n"
+            "so part of the cysteine content may fall outside the box."
+        )
     )
     parser.add_argument(
         "--ga-runs",
@@ -87,14 +93,18 @@ def print_summary_table(all_results):
             f"  {r['protein']:<18} {r['metal']:<6} {dg:<22}"
             f" {cs:<15} {r['status']}"
         )
-    print(f"{'='*75}\n")
+    print(f"{'='*75}")
+    print("  Scores are docking scores for ranking only. Compare proteins within the")
+    print("  same metal and mode, not across metals. A top cluster of 50/50 is expected")
+    print("  for a single-atom ligand and is not a reproducibility measure.")
+    print()
 
 
 
 def save_csv(all_results, csv_path):
     fieldnames = [
         "protein", "metal", "best_dG",
-        "cluster_size", "interpretation", "status"
+        "cluster_size", "status"
     ]
     with open(csv_path, "w", newline="", encoding="utf-8") as csvfile:
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames, extrasaction="ignore")
@@ -106,25 +116,25 @@ def save_csv(all_results, csv_path):
 
 def main():
     args   = parse_args()
-    metals = SUPPORTED_METALS if args.all_metals else [args.metal.upper()]
+    metals = SUPPORTED_METALS if args.all_metals else [args.metal]
 
     if args.pdb:
         if not os.path.isfile(args.pdb):
             print(f"ERROR: PDB file not found: {args.pdb}")
-            return
+            return 1
         pdb_files = [args.pdb]
     else:
         if not os.path.isdir(args.pdb_dir):
             print(f"ERROR: Folder not found: {args.pdb_dir}")
-            return
-        pdb_files = [
+            return 1
+        pdb_files = sorted(
             os.path.join(args.pdb_dir, f)
             for f in os.listdir(args.pdb_dir)
             if f.lower().endswith(".pdb")
-        ]
+        )
         if not pdb_files:
             print(f"ERROR: No .pdb files found in {args.pdb_dir}")
-            return
+            return 1
 
     total = len(pdb_files) * len(metals)
     print(f"\n{'='*75}")
@@ -132,7 +142,7 @@ def main():
     print(f"{'='*75}")
     print(f"  Proteins  : {len(pdb_files)}")
     print(f"  Metals    : {metals}")
-    print(f"  Mode      : {'Focused (Cys SG centroid)' if args.focused else 'Blind (60x60x60)'}")
+    print(f"  Mode      : {'Focused (all-Cys SG centroid)' if args.focused else 'Blind (60x60x60)'}")
     print(f"  GA runs   : {args.ga_runs}")
     print(f"  Output    : {args.out_dir}/")
     print(f"  Total runs: {total}")
@@ -157,7 +167,6 @@ def main():
                     "metal":          metal,
                     "best_dG":        result["best_energy"],
                     "cluster_size":   result["cluster_size"],
-                    "interpretation": result["interpretation"],
                     "status":         "OK",
                 })
             except Exception as e:
@@ -167,7 +176,6 @@ def main():
                     "metal":          metal,
                     "best_dG":        None,
                     "cluster_size":   None,
-                    "interpretation": "FAILED",
                     "status":         str(e),
                 })
 
@@ -176,7 +184,9 @@ def main():
     if args.csv:
         save_csv(all_results, args.csv)
 
+    return 0 if all(r["status"] == "OK" for r in all_results) else 1
+
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
