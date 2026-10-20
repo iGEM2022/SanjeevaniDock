@@ -30,7 +30,7 @@ def run_pipeline(
     blind:      bool = True,
 ) -> dict:
     """
-    Run the full Pipeline B for one protein + one metal.
+    Run the full docking pipeline for one protein + one metal.
 
     Parameters
     ----------
@@ -43,7 +43,7 @@ def run_pipeline(
 
     Returns
     -------
-    dict with keys: best_energy, all_energies, cluster_size, interpretation
+    dict with keys: best_energy, all_energies, cluster_size
     """
     metal_code   = metal_code.upper()
     protein_stem = os.path.splitext(os.path.basename(pdb_path))[0]
@@ -86,7 +86,7 @@ def run_pipeline(
         box_size = (60, 60, 60)
         print("\n[Step 4/8] Grid mode: Blind (60x60x60, auto center).")
     else:
-        print("\n[Step 4/8] Grid mode: Focused — computing CYS SG centroid...")
+        print("\n[Step 4/8] Grid mode: Focused — computing centroid of all CYS SG atoms...")
         cx, cy, cz = compute_sg_centroid(pdb_path)
         center     = (cx, cy, cz)
         box_size   = (20, 20, 20)
@@ -155,7 +155,6 @@ def run_pipeline(
     print(f"  RESULTS : {protein_stem} + {metal_code}")
     print(f"  Best dG        : {results['best_energy']} kcal/mol")
     print(f"  Top cluster    : {results['cluster_size']} runs")
-    print(f"  Interpretation : {results['interpretation']}")
     print(f"{'='*60}\n")
 
     return results
