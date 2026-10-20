@@ -12,7 +12,7 @@ SanjeevaniDock automates the full AutoDock 4 workflow for **single metal ions** 
 
 Given a protein `.pdb` file and a target metal, SanjeevaniDock automatically:
 
-1. Writes `AD4_metals.dat` with custom heavy-metal parameters
+1. Writes `AD4_metals.dat` with custom heavy-metal parameters (see [Metal parameters](#metal-parameters))
 2. Converts the protein to PDBQT using MGLTools `prepare_receptor4.py`
 3. Writes the bare metal ion ligand `.pdbqt` file manually
 4. Computes the centroid of all cysteine `SG` atoms for focused docking
@@ -25,14 +25,16 @@ Given a protein `.pdb` file and a target metal, SanjeevaniDock automatically:
 
 ## Supported metals
 
-| Metal   | Code | Charge | Role |
-|---------|------|--------|------|
-| Cadmium | `CD` | +2 | Primary MT substrate |
-| Copper  | `CU` | +2 | Primary MT substrate |
-| Mercury | `HG` | +2 | Primary MT substrate |
-| Iron    | `FE` | +2 | Negative control |
+| Metal   | Code | Charge | Notes |
+|---------|------|--------|-------|
+| Cadmium | `CD` | +2 | Target metal |
+| Copper  | `CU` | +2 | Target metal (modelled as Cu²⁺) |
+| Mercury | `HG` | +2 | MT substrate |
+| Iron    | `FE` | +2 | Target metal |
 | Zinc    | `ZN` | +2 | Physiological MT substrate |
 | Lead    | `PB` | +2 | Environmental contaminant |
+
+All metals are docked as bare +2 ions. See [Metal parameters](#metal-parameters) for what that does and does not mean.
 
 ---
 
@@ -47,6 +49,8 @@ Install the following first:
    https://ccsb.scripps.edu/mgltools/downloads/
 3. **AutoDock 4.2.6**  
    https://autodock.scripps.edu/download-autodock4/
+
+If MGLTools is not in its default location (`C:\Program Files (x86)\MGLTools-1.5.7`), set the `MGLTOOLS_DIR` environment variable to its install folder before running.
 
 ### 2. Make sure AutoDock executables are available
 
@@ -95,16 +99,53 @@ So even though this pipeline is fully CLI-based, **MGLTools is still essential**
 
 ---
 
-## Important assumptions
+## Receptor structures
+
+The `proteins/` folder holds the receptor files. Each structure, its UniProt accession, length, cysteine count and confidence is listed in [`proteins/README.md`](proteins/README.md).
+
+The metallothionein models are unmodified **AlphaFold** predictions of the apo (metal-free) protein, with low-to-moderate confidence (mean pLDDT roughly 48-64). Metallothioneins fold around their bound metals, so treat these models as approximate cysteine-cluster geometries, not as resolved binding sites.
+
+---
+
+## Important assumptions and limitations
 
 Before using the software, note the following:
 
 - This tool is designed for **bare metal ions**, not organic ligands or metal complexes.
 - Input proteins must already exist as valid `.pdb` structure files.
-- Focused docking uses the centroid of **cysteine sulfur (`SG`) atoms**, not alpha carbons.
 - AutoDock scores are used for **ranking and prioritization only**.
-- Docking energies from this tool are **not experimental \(K_d\) values**.
-- **Fe²⁺** is included as a negative control and should usually bind more weakly than Cd²⁺, Cu²⁺, and Hg²⁺.
+- Docking energies from this tool are **not experimental Kd values**.
+- **Scores are not comparable between metals.** The metal parameters are empirical (see below), and the metal-to-metal ordering follows them. Compare proteins against each other **for the same metal**, not one metal against another.
+- **A cluster size of 50/50 is expected for a single atom** and is not evidence of reproducibility (see [Interpreting results](#interpreting-results)).
+- **Focused docking is only meaningful for single-domain proteins.** Its grid is centred on the centroid of *all* cysteine `SG` atoms. For a multi-domain metallothionein (for example the type 4 proteins, which have two cysteine-rich domains) that centroid lies between the domains, and part of the cysteine content falls outside the 20 Å box. For multi-domain proteins use the blind (default) mode, or dock each cysteine cluster separately.
+- Copper is modelled as **Cu²⁺**. Metal-bound copper in metallothioneins is normally Cu(I)-thiolate, so Cu²⁺ results should not be read as a model of the biological state.
+
+---
+
+## Metal parameters
+
+AutoDock 4 has no built-in parameters for most heavy metals, so SanjeevaniDock writes its own `AD4_metals.dat`. AutoDock loads its default library first, so this file works as an addition to it.
+
+**These parameters are empirical.** They were set by the IISER TVM Dry Lab. They are **not** taken from a published force field and were **not** fitted to, or validated against, experimental binding data. The `ZN` values match AutoDock's own default zinc parameters. For Cd, Cu, Hg and Pb the `Rii` value falls at roughly 0.8-0.9 × the Shannon (1976) six-coordinate ionic diameter, but this is an observation about the numbers, not a derivation.
+
+| Code | Rii (Å) | epsii (kcal/mol) | vol (Å³) | solv | Charge |
+|------|---------|------------------|----------|------|--------|
+| `FE` | 1.20 | 0.050 | 11.000 | -0.00110 | +2 |
+| `CU` | 1.30 | 0.050 | 10.000 | -0.00110 | +2 |
+| `ZN` | 1.48 | 0.250 | 13.438 | -0.00110 | +2 |
+| `CD` | 1.58 | 0.250 | 12.000 | -0.00110 | +2 |
+| `HG` | 1.70 | 0.300 | 14.000 | -0.00110 | +2 |
+| `PB` | 1.90 | 0.400 | 16.000 | -0.00110 | +2 |
+
+Every ligand has `TORSDOF 0` and charge +2.000.
+
+### What this means for the results
+
+In our own runs on nine metallothionein structures, the metal order by docking score was **the same as the `Rii` order for every protein** (the smallest ion, Fe, scored most negative; the largest, Pb, least negative). Across proteins, the ranking was also very similar from one metal to the next. So:
+
+- The metal-to-metal differences mainly reflect the chosen parameters (ion size and charge), not metal-specific coordination chemistry.
+- Results for different metals on the same protein are **not independent** evidence.
+- Pb scoring weakest and Fe scoring strongest are properties of these parameters. They should not be used to say anything about the real affinity of a protein for those metals.
 
 ---
 
@@ -133,7 +174,7 @@ python run_dock.py --pdb proteins/smtA.pdb --metal CD
 
 - `--pdb proteins/smtA.pdb` → use `smtA.pdb` as the receptor protein
 - `--metal CD` → dock **cadmium**
-- No other options → one protein, one metal, default docking mode
+- No other options → one protein, one metal, default (blind) docking mode
 
 ### Expected output files
 
@@ -153,16 +194,16 @@ AutoDock_Runs/
 
 ### Expected terminal output
 
-The exact numbers will vary, but the final output should look something like this:
+The exact numbers will vary (the genetic algorithm is seeded from the process ID and time). The final output looks like this, with illustrative values:
 
 ```text
-Protein  Metal  Best_dG  Cluster_size
-smtA     CD     -8.4     17
+  Protein            Metal  Best dG (kcal/mol)     Cluster Size    Status
+  smtA               CD     -8.400                 50              OK
 ```
 
 Interpretation:
-- More negative `Best_dG` = stronger predicted binding
-- Larger `Cluster_size` = better convergence across docking runs
+- More negative `Best dG` = better predicted binding **for that metal**
+- Cluster size: see [Interpreting results](#interpreting-results)
 
 ---
 
@@ -186,6 +227,8 @@ python run_dock.py --pdb proteins/smtA.pdb --all-metals
 python run_dock.py --pdb proteins/smtA.pdb --all-metals --focused
 ```
 
+Read the focused-docking limitation under [Important assumptions and limitations](#important-assumptions-and-limitations) before using this on multi-domain proteins.
+
 ### All proteins in one directory, all metals, export CSV
 
 ```bash
@@ -200,6 +243,17 @@ python run_dock.py --pdb proteins/smtA.pdb --metal CD --ga-runs 100
 
 ---
 
+## Docking modes
+
+| Mode | Flag | Grid |
+|------|------|------|
+| Blind (default) | none | 60 × 60 × 60 Å, `gridcenter auto`, spacing 0.375 Å |
+| Focused | `--focused` | 20 × 20 × 20 Å centred on the centroid of all cysteine `SG` atoms, spacing 0.375 Å |
+
+Both modes use the Lamarckian genetic algorithm, 50 runs by default.
+
+---
+
 ## Command-line options
 
 | Flag | Meaning |
@@ -211,6 +265,7 @@ python run_dock.py --pdb proteins/smtA.pdb --metal CD --ga-runs 100
 | `--focused` | Use focused docking centered on the cysteine `SG` centroid |
 | `--csv FILE` | Save parsed results to a CSV file |
 | `--ga-runs N` | Set the number of AutoDock GA runs manually |
+| `--out-dir DIR` | Root folder for output files (default `AutoDock_Runs/`) |
 
 ### Supported metal codes
 
@@ -256,19 +311,19 @@ The `.dlg` file is the main output that SanjeevaniDock parses to extract binding
 
 ## Interpreting results
 
-| dG (kcal/mol) | Interpretation |
-|---------------|----------------|
-| `< -10` | Very strong binding |
-| `-10 to -7` | Strong binding |
-| `-7 to -5` | Moderate binding |
-| `> -5` | Weak or non-specific binding |
+SanjeevaniDock reports the lowest "Estimated Free Energy of Binding" across all GA runs, and the population of the top cluster.
 
-### Notes on interpretation
+### Docking score
 
-- These values are **docking scores**, not experimental free energies.
-- Use them to **rank candidates**, not to make absolute thermodynamic claims.
-- A good metallothionein candidate should usually bind **Cd²⁺, Cu²⁺, or Hg²⁺** more strongly than **Fe²⁺**.
-- If Fe²⁺ docks unusually well, treat that as a possible non-specific electrostatic artifact rather than real coordination chemistry.
+- These values are **docking scores**, not experimental free energies, and there is no absolute threshold that separates "strong" from "weak" binding for a bare ion with empirical parameters.
+- Use them to **rank proteins against each other for one metal**, in one docking mode.
+- Do not compare a score for one metal with a score for another (see [Metal parameters](#metal-parameters)).
+- Do not mix blind and focused scores into one number. Average and report them separately.
+- Scores from separate runs of the same job can differ slightly, since the GA is seeded from time. Where possible, repeat runs and report mean ± standard deviation.
+
+### Cluster size
+
+For a **single-atom ligand**, the search converges trivially: in our runs every one of the 50 GA runs ended at the same grid position, giving a top cluster of 50/50. A large cluster size therefore does **not** show that the result is reproducible or that the site is specific. Do not use it as a quality filter for this tool.
 
 ---
 
@@ -281,7 +336,7 @@ AutoDock 4 is not on your system `PATH`. Reinstall AutoDock or add the folder co
 Same issue as above: AutoGrid is not on your system `PATH`.
 
 ### `prepare_receptor4.py` fails
-Make sure **MGLTools 1.5.7** is installed correctly. SanjeevaniDock depends on the MGLTools receptor-preparation script even though it does not use the GUI.
+Make sure **MGLTools 1.5.7** is installed correctly. SanjeevaniDock depends on the MGLTools receptor-preparation script even though it does not use the GUI. If MGLTools is installed outside the default folder, set `MGLTOOLS_DIR` (see Quick start).
 
 ### Python version problems
 SanjeevaniDock itself uses **Python 3**, but MGLTools was historically distributed with older tooling. If receptor preparation fails, verify that the required preparation script path is valid on your machine.
@@ -295,8 +350,8 @@ This usually means AutoDock did not finish successfully. Check:
 - whether the `.gpf` and `.dpf` files were written correctly,
 - and whether the AutoDock executables are callable from the command line.
 
-### Strange Fe²⁺ results
-Fe²⁺ is a negative control. If Fe²⁺ appears stronger than Cd²⁺, Cu²⁺, or Hg²⁺ across many proteins, inspect the result manually before accepting it.
+### One metal scores much better than the others across many proteins
+Expected. Scores follow the metal parameters (mostly ion size), so a small ion such as Fe²⁺ will score more negatively than a large one such as Pb²⁺ on almost any protein. See [Metal parameters](#metal-parameters).
 
 ---
 
@@ -320,8 +375,10 @@ If you use SanjeevaniDock in presentations, reports, or the iGEM wiki, cite it a
 
 > IISER Thiruvananthapuram iGEM 2026 Dry Lab. *SanjeevaniDock: Automated bare heavy-metal ion docking to metallothioneins using AutoDock 4.2.6.* GitHub, 2026.
 
+If you use the AlphaFold structures in `proteins/`, also cite the AlphaFold papers listed in [`proteins/README.md`](proteins/README.md).
+
 ---
 
 ## License
 
-MIT License.
+MIT License. See the `LICENSE` file.
