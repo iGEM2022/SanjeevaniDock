@@ -21,9 +21,9 @@ import os
 # ---------------------------------------------------------------------------
 # Metal parameter database
 # ---------------------------------------------------------------------------
-# Parameters sourced from:
-#   Hou & Xu (2002) J Comput Chem; Chakravorty et al. (2018);
-#   and AD4 community-validated values for heavy metals.
+# These parameters are EMPIRICAL: chosen by the IISER TVM iGEM 2026 Dry Lab,
+# not taken from a published force field and not validated against experiment.
+# Scores are for ranking proteins within one metal only (see the README).
 # Columns: Rii, epsii, vol, solvation, hbond_r, hbond_e, hbond_t, hba, hbd
 # ---------------------------------------------------------------------------
 METAL_PARAMS = {
@@ -61,7 +61,7 @@ METAL_PARAMS = {
         "epsii":      0.050,
         "vol":        11.000,
         "solv":      -0.00110,
-        "comment":   "Iron(II) - borderline-hard Lewis acid, NEGATIVE CONTROL"
+        "comment":   "Iron(II) - borderline Lewis acid, target metal"
     },
     "ZN": {
         "charge":     "+2.000",
